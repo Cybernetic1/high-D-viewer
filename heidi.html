@@ -7,10 +7,19 @@
 // JavaScript source code goes here
 </script>
 </head>
-<body onload="draw()">
+<body onload="draw()" bgcolor="#000000">
+	
+<div>
+<div style="background-color:#ff0000; width:140px; height:27px; float:left;">
+<input type="range" id="camx" value="0" max="360" onchange="rotateX()" onfocus="renewX()">
+</div>
+<div style="background-color:#00ff00; width:140px; height:27px; float:left; margin-left:20px;">
+<input type="range" id="camy" value="0" max="360" onchange="rotateY()" onfocus="renewY()">
+</div>
+<div style="background-color:#0000ff; width:140px; height:27px; float:left; margin-left:20px;">
+<input type="range" id="camz" value="0" max="360" onchange="rotateZ()" onfocus="renewZ()">
+</div>
+</div>
 <canvas id="canvas" width="1000" height="800"></canvas>
-<input type="range" id="camx" value="0" max="360" onchange="redraw()">
-<input type="range" id="camy" value="0" max="360" onchange="redraw()">
-<input type="range" id="camz" value="0" max="360" onchange="redraw()">
 </body>
 </html>

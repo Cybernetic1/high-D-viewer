@@ -1,5 +1,5 @@
-// function fun1(x) {return Math.sin(x);  }
-// function fun2(x) {return Math.cos(3*x);}
+var audio = new Audio('beep.mp3');
+audio.play();
 
 var dim = 3;
 
@@ -10,7 +10,7 @@ var ctx = null;
 
 // **** prepare Model-View-Projection matrix
 var viewMatrix = GL.Matrix.lookAt(3, 3, 3,
-		0, 0, 0,  0, -1, 0);
+		0, 0, 0,  0, 1, 0);
 									// (fov, aspect, near, far):
 var projMatrix = GL.Matrix.perspective(40, 1.0, 0.1, 100.0);
 var mvpMatrix = projMatrix.multiply(viewMatrix);
@@ -20,47 +20,189 @@ var axisX = new GL.Vector(1, 0, 0);
 var axisY = new GL.Vector(0, 1, 0);
 var axisZ = new GL.Vector(0, 0, 1);
 
-function redraw()
-{
-	var camx = document.getElementById("camx").value;
-	var camy = document.getElementById("camy").value;
-	var camz = document.getElementById("camz").value;
+var preMatrix = new GL.Matrix.identity();
+var rotX = new GL.Matrix.identity();
+var rotY = new GL.Matrix.identity();
+var rotZ = new GL.Matrix.identity();
 
-	var newX, newY, newZ, newZ2;
-	// **** prepare Model-View-Projection matrix
-	rotX = GL.Matrix.rotate(camx, axisX.x, axisX.y, axisX.z);
+var newX = new GL.Vector(1, 0, 0);
+var newY = new GL.Vector(0, 1, 0);
+var newZ = new GL.Vector(0, 0, 1);
+
+function renewX()
+{
+	var camx = 0;
+	document.getElementById("camx").value = 0;
+
+	// save the old matrices:
+	preMatrix = GL.Matrix.multiply(rotZ, preMatrix);
+	preMatrix = GL.Matrix.multiply(rotY, preMatrix);
+	preMatrix = GL.Matrix.multiply(rotX, preMatrix);
+
 	newY = rotX.transformVector(axisY);
 	newZ = rotX.transformVector(axisZ);
-	// axisY.x = newY.x; axisY.y = newY.y; axisY.z = newY.z;
-	// axisZ.x = newZ.x; axisZ.y = newZ.y; axisZ.z = newZ.z;
-
-	ctx.clearRect(0, 0, width, height);
-	ctx.strokeStyle = "rgb(200,200,200)";
-	drawLine(origin, newY);
-	drawLine(origin, newZ);
-	
-	rotY = GL.Matrix.rotate(camy, newY.x, newY.y, newY.z);
+	axisY.x = newY.x; axisY.y = newY.y; axisY.z = newY.z;
+	axisZ.x = newZ.x; axisZ.y = newZ.y; axisZ.z = newZ.z;
 	newX = rotY.transformVector(axisX);
-	newZ2 = rotY.transformVector(newZ);
-	// axisX.x = newX.x; axisX.y = newX.y; axisX.z = newX.z;
-	// axisZ.x = newZ.x; axisZ.y = newZ.y; axisZ.z = newZ.z;
-	
-	rotZ = GL.Matrix.rotate(camz, newZ2.x, newZ2.y, newZ2.z);
-	// newX = rotZ.transformVector(axisX);
-	// newY = rotZ.transformVector(axisY);
-	// axisX.x = newX.x; axisX.y = newX.y; axisX.z = newX.z;
-	// axisY.x = newY.x; axisY.y = newY.y; axisY.z = newY.z;
+	newZ = rotY.transformVector(axisZ);
+	axisX.x = newX.x; axisX.y = newX.y; axisX.z = newX.z;
+	axisZ.x = newZ.x; axisZ.y = newZ.y; axisZ.z = newZ.z;
+	newX = rotZ.transformVector(axisX);
+	newY = rotZ.transformVector(axisY);
+	axisX.x = newX.x; axisX.y = newX.y; axisX.z = newX.z;
+	axisY.x = newY.x; axisY.y = newY.y; axisY.z = newY.z;
+
+	GL.Matrix.identity(rotZ);
+	GL.Matrix.identity(rotY);
+	GL.Matrix.identity(rotX);
 
 	viewMatrix = GL.Matrix.lookAt(3, 3, 3,
-			0, 0, 0,  0, -1, 0);
+			0, 0, 0,  0, 1, 0);
 										// (fov, aspect, near, far):
 	projMatrix = GL.Matrix.perspective(40, 1.0, 0.1, 100.0);
 
-	m1 = rotZ.multiply(rotY);
-	m2 = m1.multiply(rotX);
-	m3 = viewMatrix.multiply(m2);
-	mvpMatrix = projMatrix.multiply(m3);
+	m0 = GL.Matrix.multiply(rotX, preMatrix);
+	m1 = GL.Matrix.multiply(rotY, m0);
+	m2 = GL.Matrix.multiply(rotZ, m1);
+	m3 = GL.Matrix.multiply(viewMatrix, m2);
+	mvpMatrix = GL.Matrix.multiply(projMatrix, m3);
+	draw();
+}
 
+function rotateX()
+{
+	var camx = document.getElementById("camx").value;
+
+	rotX = GL.Matrix.rotate(camx, axisX.x, axisX.y, axisX.z);
+	
+	viewMatrix = GL.Matrix.lookAt(3, 3, 3,
+			0, 0, 0,  0, 1, 0);
+										// (fov, aspect, near, far):
+	projMatrix = GL.Matrix.perspective(40, 1.0, 0.1, 100.0);
+
+	m0 = GL.Matrix.multiply(rotX, preMatrix);
+	m1 = GL.Matrix.multiply(rotY, m0);
+	m2 = GL.Matrix.multiply(rotZ, m1);
+	m3 = GL.Matrix.multiply(viewMatrix, m2);
+	mvpMatrix = GL.Matrix.multiply(projMatrix, m3);
+	draw();
+}
+
+function renewY()
+{
+	var camy = 0;
+	document.getElementById("camy").value = 0;
+
+	// save the old matrices:
+	preMatrix = GL.Matrix.multiply(rotZ, preMatrix);
+	preMatrix = GL.Matrix.multiply(rotY, preMatrix);
+	preMatrix = GL.Matrix.multiply(rotX, preMatrix);
+
+	newY = rotX.transformVector(axisY);
+	newZ = rotX.transformVector(axisZ);
+	axisY.x = newY.x; axisY.y = newY.y; axisY.z = newY.z;
+	axisZ.x = newZ.x; axisZ.y = newZ.y; axisZ.z = newZ.z;
+	newX = rotY.transformVector(axisX);
+	newZ = rotY.transformVector(axisZ);
+	axisX.x = newX.x; axisX.y = newX.y; axisX.z = newX.z;
+	axisZ.x = newZ.x; axisZ.y = newZ.y; axisZ.z = newZ.z;
+	newX = rotZ.transformVector(axisX);
+	newY = rotZ.transformVector(axisY);
+	axisX.x = newX.x; axisX.y = newX.y; axisX.z = newX.z;
+	axisY.x = newY.x; axisY.y = newY.y; axisY.z = newY.z;
+
+	GL.Matrix.identity(rotZ);
+	GL.Matrix.identity(rotY);
+	GL.Matrix.identity(rotX);
+
+	viewMatrix = GL.Matrix.lookAt(3, 3, 3,
+			0, 0, 0,  0, 1, 0);
+										// (fov, aspect, near, far):
+	projMatrix = GL.Matrix.perspective(40, 1.0, 0.1, 100.0);
+
+	m0 = GL.Matrix.multiply(rotX, preMatrix);
+	m1 = GL.Matrix.multiply(rotY, m0);
+	m2 = GL.Matrix.multiply(rotZ, m1);
+	m3 = GL.Matrix.multiply(viewMatrix, m2);
+	mvpMatrix = GL.Matrix.multiply(projMatrix, m3);
+	draw();
+}
+
+function rotateY()
+{
+	var camy = document.getElementById("camy").value;
+
+	rotY = GL.Matrix.rotate(camy, axisY.x, axisY.y, axisY.z);
+
+	viewMatrix = GL.Matrix.lookAt(3, 3, 3,
+			0, 0, 0,  0, 1, 0);
+										// (fov, aspect, near, far):
+	projMatrix = GL.Matrix.perspective(40, 1.0, 0.1, 100.0);
+
+	m0 = GL.Matrix.multiply(rotX, preMatrix);
+	m1 = GL.Matrix.multiply(rotY, m0);
+	m2 = GL.Matrix.multiply(rotZ, m1);
+	m3 = GL.Matrix.multiply(viewMatrix, m2);
+	mvpMatrix = GL.Matrix.multiply(projMatrix, m3);
+	draw();
+}
+
+function renewZ()
+{
+	var camz = 0;
+	document.getElementById("camz").value = 0;
+
+	// save the old matrices:
+	preMatrix = GL.Matrix.multiply(rotZ, preMatrix);
+	preMatrix = GL.Matrix.multiply(rotY, preMatrix);
+	preMatrix = GL.Matrix.multiply(rotX, preMatrix);
+
+	newY = rotX.transformVector(axisY);
+	newZ = rotX.transformVector(axisZ);
+	axisY.x = newY.x; axisY.y = newY.y; axisY.z = newY.z;
+	axisZ.x = newZ.x; axisZ.y = newZ.y; axisZ.z = newZ.z;
+	newX = rotY.transformVector(axisX);
+	newZ = rotY.transformVector(axisZ);
+	axisX.x = newX.x; axisX.y = newX.y; axisX.z = newX.z;
+	axisZ.x = newZ.x; axisZ.y = newZ.y; axisZ.z = newZ.z;
+	newX = rotZ.transformVector(axisX);
+	newY = rotZ.transformVector(axisY);
+	axisX.x = newX.x; axisX.y = newX.y; axisX.z = newX.z;
+	axisY.x = newY.x; axisY.y = newY.y; axisY.z = newY.z;
+
+	GL.Matrix.identity(rotZ);
+	GL.Matrix.identity(rotY);
+	GL.Matrix.identity(rotX);
+
+	viewMatrix = GL.Matrix.lookAt(3, 3, 3,
+			0, 0, 0,  0, 1, 0);
+										// (fov, aspect, near, far):
+	projMatrix = GL.Matrix.perspective(40, 1.0, 0.1, 100.0);
+
+	m0 = GL.Matrix.multiply(rotX, preMatrix);
+	m1 = GL.Matrix.multiply(rotY, m0);
+	m2 = GL.Matrix.multiply(rotZ, m1);
+	m3 = GL.Matrix.multiply(viewMatrix, m2);
+	mvpMatrix = GL.Matrix.multiply(projMatrix, m3);
+	draw();
+}
+
+function rotateZ()
+{
+	var camz = document.getElementById("camz").value;
+
+	rotZ = GL.Matrix.rotate(camz, axisZ.x, axisZ.y, axisZ.z);
+
+	viewMatrix = GL.Matrix.lookAt(3, 3, 3,
+			0, 0, 0,  0, 1, 0);
+										// (fov, aspect, near, far):
+	projMatrix = GL.Matrix.perspective(40, 1.0, 0.1, 100.0);
+
+	m0 = GL.Matrix.multiply(rotX, preMatrix);
+	m1 = GL.Matrix.multiply(rotY, m0);
+	m2 = GL.Matrix.multiply(rotZ, m1);
+	m3 = GL.Matrix.multiply(viewMatrix, m2);
+	mvpMatrix = GL.Matrix.multiply(projMatrix, m3);
 	draw();
 }
 
@@ -71,19 +213,13 @@ function draw()
 	height = canvas.height;
 	if (canvas == null || !canvas.getContext)
 		exit(0);
+	canvas.style.backgroundColor = 'rgba(0, 0, 0, 1.0)';
 
 	ctx = canvas.getContext("2d");
-
-	// var axes= {};
-	// axes.x0 = .5 + .5*canvas.width;  // x0 pixels from left to x=0
-	// axes.y0 = .5 + .5*canvas.height; // y0 pixels from top to y=0
-	// axes.scale = 40;                 // 40 pixels from x=0 to x=1
-	// axes.doNegativeX = true;
-	showAxes(ctx);
-	// funGraph(ctx,axes,fun1,"rgb(11,153,11)",1);
-	// funGraph(ctx,axes,fun2,"rgb(66,44,255)",2);
-
+	// ctx.fillStyle = "#000000";
+	ctx.clearRect(0, 0, width, height);
 	ctx.lineWidth = 2;
+	showAxes(ctx);
 	ctx.strokeStyle = "rgb(99,99,99)";
 
 	// loop over all vertices on hypercube
@@ -121,29 +257,8 @@ function draw()
 				vec2.z = (v2[2] == 1 ? 1.0 : 0.0);
 			}
 			drawLine(vec1, vec2);
-		}
-		
+		}		
 	}
-
-	/* model coordinates = world coordinates
-	var p1 = new GL.Vector(1.0, 1.0, 1.0);
-	var p2 = new GL.Vector(-1.0, -1.0, -1.0);
-
-	var v1 = mvpMatrix.transformPoint(p1);
-	var v2 = mvpMatrix.transformPoint(p2);
-
-	v1.x /= v1.z; v1.y /= v1.z;
-	v2.x /= v2.z; v2.y /= v2.z;
-	
-	v1.xwin = (v1.x + 1.0) * 0.5 * width + 0.0;
-	v1.ywin = (v1.y + 1.0) * 0.5 * height + 0.0;
-	
-	v2.xwin = (v2.x + 1.0) * 0.5 * width + 0.0;
-	v2.ywin = (v2.y + 1.0) * 0.5 * height + 0.0;
-
-	console.log(v1.xwin, v1.ywin);
-	console.log(v2.xwin, v2.ywin);
-	*/
 }
 
 function drawLine(q1, q2)
@@ -174,27 +289,7 @@ function drawLine(q1, q2)
     ctx.stroke();
 }
 
-function funGraph (ctx,axes,func,color,thick) {
-	var xx, yy, dx=4, x0=axes.x0, y0=axes.y0, scale=axes.scale;
-	var iMax = Math.round((ctx.canvas.width-x0)/dx);
-	var iMin = axes.doNegativeX ? Math.round(-x0/dx) : 0;
-	ctx.beginPath();
-	ctx.lineWidth = thick;
-	ctx.strokeStyle = color;
-
-	for (var i=iMin; i<=iMax; i++) {
-		xx = dx*i;
-		yy = scale*func(xx/scale);
-		if (i==iMin) ctx.moveTo(x0+xx,y0-yy);
-		else         ctx.lineTo(x0+xx,y0-yy);
-	}
-	ctx.stroke();
-}
-
 function showAxes(ctx) {
-	// var x0=axes.x0, w=ctx.canvas.width;
-	// var y0=axes.y0, h=ctx.canvas.height;
-	// var xmin = axes.doNegativeX ? 0 : x0;
 	ctx.beginPath();
 
 	// X axis
